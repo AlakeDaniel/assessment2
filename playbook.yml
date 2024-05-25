@@ -1,0 +1,47 @@
+---
+- name: Deploy Socks Shop Application
+  hosts: localhost
+  gather_facts: no
+  remote_user: vagrant
+
+  tasks:
+  - name: Install Prometheus
+    apt:
+      name: prometheus
+      state: present
+
+  - name: Configure Prometheus
+    template:
+      src: templates/prometheus.yml.j2
+      dest: /etc/prometheus/prometheus.yml
+      mode: '0644'
+    notify: restart prometheus
+
+  - name: Install Ansible Vault
+    apt:
+      name: ansible-vault
+      state: present
+
+  - name: Encrypt sensitive information
+    ansible.vault:
+      password: your-vault-password
+      src: templates/secrets.yml.j2
+      dest: /etc/ansible/secrets.yml
+      mode: '0644'
+
+  - name: Configure network perimeter security
+    gcp_firewall:
+      name: socks-shop-firewall
+      network: your-network
+      allowed:
+        - ip_protocol: TCP
+          ports: ["80", "443"]
+        - ip_protocol: ICMP
+
+  handlers:
+  - name: restart prometheus
+    service:
+      name: prometheus
+      state: restarted
+
+
